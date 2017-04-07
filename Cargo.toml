@@ -2,6 +2,7 @@
 name = "LocalizedEmpire"
 version = "0.1.0"
 authors = ["LogoiLab <cbaxter@mail.umw.edu>"]
+description = "A locator for PowershellEmpire clients and servers for local networks."
 
 [dependencies]
 clap = "*"
