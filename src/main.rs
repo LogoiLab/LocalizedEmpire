@@ -3,11 +3,40 @@ extern crate clap;
 extern crate hyper;
 extern crate ipaddress;
 
+use std::io::Read;
+
 use clap::{Arg,App};
 
 use hyper::Client;
+use hyper::client::Response;
 
 use ipaddress::IPAddress;
+
+fn v0(ip_address: &IPAddress, detect_type: String) {
+    if detect_type == String::from("client") {
+        unimplemented!();
+    } else {
+        unimplemented!();
+    }
+}
+
+fn v1(ip_address: &IPAddress, detect_type: String) {
+    if detect_type == String::from("client") {
+        let high: &IPAddress = &ip_address.first();
+        let low: &IPAddress = &ip_address.last();
+        let client = Client::new();
+
+        println!("[verbose]: Starting client.");
+        for i in high.to_string().split(".").collect::<Vec<&str>>().last().unwrap().parse::<i32>().unwrap() .. low.to_string().split(".").collect::<Vec<&str>>().last().unwrap().parse::<i32>().unwrap() {
+            let ip: String = low.to_string() + i.to_string().as_str();
+            println!("[verbose]: Sending GET request for IP address: {}", &ip);
+            let response = client.get("http://google.com/").send().unwrap();
+            println!("{:?}", response);
+        }
+    } else {
+        unimplemented!();
+    }
+}
 
 fn main() {
     let matches = App::new(crate_name!())
@@ -35,29 +64,33 @@ fn main() {
                         .required(false)
                     )
                     .get_matches();
+    let client = Client::new();
+    let mut response = client.get("http://google.com/").send().unwrap();
 
-    let mut ip_address: Result<IPAddress, String> = match IPAddress::is_valid(matches.value_of("ipaddress").unwrap()) {
+    let body = response.bytes();
+    let mut temp: Vec<u8> = vec!();
+    for byte in body {
+        temp.push(byte.unwrap());
+    }
+    println!("{:?}", String::from_utf8(temp));
+
+    let ip_address: Result<IPAddress, String> = match IPAddress::is_valid(matches.value_of("ipaddress").unwrap()) {
         true => IPAddress::parse(matches.value_of("ipaddress").unwrap()),
-        false => panic!("Invalid IP address or IP range entered.")
+        false => panic!("[fatal]: Invalid IP address or IP range entered.")
     };
 
-    let detect_type = match String::from(matches.value_of("type").unwrap()).to_lowercase().as_str() {
-        "client" => panic!("Not yet implemented check back later"),
+    let detect_type: String = match String::from(matches.value_of("type").unwrap()).to_lowercase().as_str() {
+        "client" => panic!("[fatal]: Not yet implemented check back later."),
         "server" => String::from(matches.value_of("type").unwrap()).to_lowercase(),
-        _ => panic!("Invalid type provided."),
+        _ => panic!("[fatal]: Invalid type provided."),
     };
 
-    let verbosity = match matches.occurrences_of("verbose") {
-        0 => 0,
-        1 => 1,
+    match matches.occurrences_of("verbose") {
+        0 => v0(&ip_address.unwrap(), detect_type),
+        1 => v1(&ip_address.unwrap(), detect_type),
         2 | _ => {
-            println!("Don't be crazy!");
-            1
+            println!("[warning]: Don't be crazy!");
+            v1(&ip_address.unwrap(), detect_type);
         },
     };
-
-    let client = Client::new();
-
-    let res = client.get("http://google.com/").send().unwrap();
-    assert_eq!(res.status, hyper::Ok);
 }
